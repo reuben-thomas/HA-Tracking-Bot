@@ -1,14 +1,16 @@
 // Telegram bot token
-const TELEBOT_TOKEN = "";   // enter your bot token here
+const TELEBOT_TOKEN = '1594934478:AAF76vNdzFqEeuxzgJG99wW0mgbc5gZgBX8';
 
 // Telegram bot official api (Not Nodejs)
-const TELEBOT_API = 'https://api.telegram.org/bot';
+const TELEBOT_API = "";
 
 // Spreadsheet ID
-const SSID = "";  // enter id of the google spreadsheet you would like data to be sent to here
+const SSID = "";
 
 // Deployment URL
-const DEP_URL = ""; // the deployment url 
+const DEP_URL = "";
+
+
 
 
 /*
@@ -31,3 +33,14 @@ const TELE_ID_COL_RANGE = "B5:B41";
 const HA_VALID_COL_RANGE = "C5:C41";
 
 
+
+
+/*
+VALID COMMANDS
+
+*/
+// List of valid typed commands into bot
+const VALID_COMMANDS =  ['/start', '/help', '/authenticate', '/addactivity', '/checkhastatus', '/addlesson', '/checklessonstaus'];
+
+// List of valid callback data, excusing otherwise it must be a new activity entry
+const VALID_CALLBACKS = ['LIFE', 'TABATA', 'VOC', 'DI', 'OTHERS'];
