@@ -18,9 +18,41 @@ class TelegramBot {
 
   // constructor
   constructor(telegram_data) {
-    this.telegramData = telegram_data;
-    this.cmd = telegram_data.message.text;
-    this.user = new User(telegram_data);
+
+    // IF CALLBACK
+    if (telegram_data.callback_query)
+    {
+      this.telegramData = telegram_data;
+      this.cmd = telegram_data.callback_query.data;
+
+      // user details
+      var chatId = telegram_data.callback_query.from.id;
+      var teleName = telegram_data.callback_query.message.chat.first_name;
+      this.user = new User(chatId, teleName);
+
+      // respond user callback
+      this.respondUserCallback();
+    }
+
+    // IF FIRST MESSAGE
+    else if (telegram_data.message) {
+      // new request data
+      this.telegramData = telegram_data;
+      this.cmd = telegram_data.message.text;
+
+      // user details
+      let chatId = telegram_data.message.from.id;
+      let teleName = telegram_data.message.from.first_name;
+      this.user = new User(chatId, teleName);
+
+      // base respond user
+      this.respondUser();
+    }
+
+    // If neither callback nor message, invalid trigger
+    else {
+      return;
+    }
   }
 
   // function to send api request
@@ -71,7 +103,38 @@ class TelegramBot {
       'reply_markup': JSON.stringify(keyboard)
     });
   }
+
+  // function to modify keyboard with set of options
+  sendMessageInlineKeyboard(text, keyboard, mode) {
+    mode = mode || 'None';
+    keyboard = keyboard ?
+      { 'inline_keyboard': keyboard } :
+      { 'remove_keyboard': true };
+
+    return this.request('sendMessage', {
+      'chat_id': this.user.chatId,
+      'text': text,
+      'parse_mode': mode,
+      'reply_markup': JSON.stringify(keyboard)
+    });
+  }
+
+  // function to send a menu with commands
+  sendMenuButtons() {
+    return this.request('MenuButtonCommands', {
+      'type': 'commads'
+    });
+  }
+
+  // function to delete message
+  deleteMessage(message_id) {
+    return this.request('deleteMessage', {
+      'chat_id': this.user.chatId,
+      'message_id': message_id
+    });
+  }
 }
+
 
 /*
   RESPOND TO USER
@@ -80,11 +143,18 @@ class TelegramBot {
 */
 TelegramBot.prototype.respondUser = function() {
 
+  // If invalid command
+  if (VALID_COMMANDS.indexOf(this.cmd) < 0) {
+    this.sendMessage("Sorry, I don't understand.\nPlease run /help for a list of valid commands");
+    return;
+  }
+
+  // If valid command
   switch(this.cmd) {
-  
     case '/start':
       this.start();
       break;
+
     case '/help':
       this.help();
       break;
@@ -102,21 +172,49 @@ TelegramBot.prototype.respondUser = function() {
       break;
 
     case '/addlesson':
-      this.selectDate();
+      this.selectDate("hello");
       break;
     
     case '/checklessonstatus':
       this.checkLessonStatus();
       break;
-
-    default:
-      var ssId = SSID;
-      var sheet = SpreadsheetApp.openById(ssId).getSheetByName("ResponseData"); 
-      var dateNow = new Date;
-      var formattedDate = dateNow.getDate() + "/" + (dateNow.getMonth() + 1) + "/" + (dateNow.getFullYear() + 1);
-      sheet.appendRow([formattedDate, this.user.teleName, this.cmd]);
-      return this.sendMessageKeyboard('OK, Activity Recorded', false);
   }
+
+
+}
+
+
+/*
+  RESPOND TO USER CALLBACKS
+
+  Determines and sends user response based on callbacks triggered
+*/
+TelegramBot.prototype.respondUserCallback = function() {
+
+  // Clear the menu after usage
+  this.deleteMessage(this.telegramData.callback_query.message.message_id);
+
+  // Cancellation behavior
+  if (this.cmd == 'CANCEL') {
+    this.sendMessage("Cancelled, all selections reset");
+    return;
+  }
+
+  // Valid activity callbacks
+  if (VALID_CALLBACKS.indexOf(this.cmd) > -1) {
+    this.selectEventDate(this.cmd);
+    return;
+  }
+
+  // If data confirmed, ready to be entered
+  if (this.cmd.includes("CONFIRMED")) {
+    this.sendMessage("New activity added");
+    return;
+  }
+
+  // New entry
+  this.confirmEntry(this.cmd);
+  return;
 }
 
 
@@ -172,14 +270,34 @@ TelegramBot.prototype.authenticate = function() {
 */
 TelegramBot.prototype.addActivity = function() {
 
-  let keyboard1 = [
-    [{ 'text': 'LIFE', 'callback_data':'life' }, { 'text': 'TABATA','callback_data':'tabata' }],
-    [{ 'text': 'VOC' }, { 'text': 'DI' }],
-    [{ 'text': 'Others' }],
-    [{ 'text': 'Cancel', 'callback_data':'cancel' }]
+    var keyboard = [
+    [{
+      "text": "LIFE",
+      "callback_data": "LIFE"
+    }],
+    [{
+      "text": "TABATA",
+      "callback_data": "TABATA"
+    }],
+    [{
+      "text": "VOC",
+      "callback_data": "VOC"
+    }],
+    [{
+      "text": "DI",
+      "callback_data": "DI"
+    }],
+    [{
+      "text": "Others",
+      "callback_data": "OTHERS"
+    }],
+    [{
+      "text": "Cancel",
+      "callback_data": "CANCEL"
+    }]
   ];
-  
-  this.sendMessageKeyboard('Enter your activity', keyboard1);
+
+  this.sendMessageInlineKeyboard("Select activity", keyboard);
 }
 
 
@@ -188,7 +306,7 @@ TelegramBot.prototype.addActivity = function() {
 
   Allows user to select a date over the past 5 days
 */
-TelegramBot.prototype.selectDate = function() {
+TelegramBot.prototype.selectEventDate = function(activityName) {
 
   const weekdayList = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   
@@ -206,21 +324,40 @@ TelegramBot.prototype.selectDate = function() {
                         + (currentDate.getMonth() + 1) + "/"
                         + (currentDate.getFullYear() + 1);
     // Add to list of dates
-    dateArr.push(currentDateString);
+    dateArr.push(currentDateString.toString());
     // Count backward one day, increment once
     currentDate.setDate(currentDate.getDate() - 1);
     n++;
   }
 
-  let keyboard = [
-    [{ 'text': dateArr[0] + " (Today)"}],
-    [{ 'text': dateArr[1]}],
-    [{ 'text': dateArr[2]}],
-    [{ 'text': dateArr[3]}],
-    [{ 'text': dateArr[4]}],
-    [{ 'text': "Cancel"}]
+  var keyboard = [
+    [{
+      "text": dateArr[0] + " (Today)",
+      "callback_data": dateArr[0] + "," + activityName
+    }],
+    [{
+      "text": dateArr[1],
+      "callback_data": dateArr[1] + "," + activityName
+    }],
+    [{
+      "text": dateArr[2],
+      "callback_data": dateArr[2] + "," + activityName
+    }],
+    [{
+      "text": dateArr[3],
+      "callback_data": dateArr[3] + "," + activityName
+    }],
+    [{
+      "text": dateArr[4],
+      "callback_data": dateArr[4] + "," + activityName
+    }],
+    [{
+      "text": "Cancel",
+      "callback_data": "CANCEL"
+    }]
   ];
-  this.sendMessageKeyboard('Select activity date', keyboard);
+
+  this.sendMessageInlineKeyboard('Select date for ' + activityName, keyboard);
 }
 
 
@@ -252,6 +389,37 @@ TelegramBot.prototype.addLesson = function() {
 */
 TelegramBot.prototype.checkLessonStatus = function() {
   this.sendMessage("Sorry, this feature is in development.");
+}
+
+
+/*
+  CONFIRMATION ENTRY FUNCTION
+
+  Prints out full details of user's activity for confirmation
+*/
+TelegramBot.prototype.confirmEntry = function(newData) {
+
+  entryArr = newData.split(',');
+
+  newDataHtml = 
+    '<b>Name:</b> ' + this.user.fullName + 
+    '\n<b>Activity:</b> ' + entryArr[1] + 
+    '\n<b>Date:</b> ' + entryArr[0] + 
+    '\n\n<b>Current HA Status:</b> ' + this.user.haValidTill; 
+
+  var keyboard = [
+    [{
+      "text": "Yes",
+      "callback_data": "CONFIRMED " + newData 
+    },
+    {
+      "text": "No",
+      "callback_data": "CANCEL"
+    }]
+  ];
+
+  this.sendMessage(newDataHtml, 'HTML');
+  this.sendMessageInlineKeyboard("Confirm Entry", keyboard); 
 }
 
 
