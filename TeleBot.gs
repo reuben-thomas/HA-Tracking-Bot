@@ -208,6 +208,9 @@ TelegramBot.prototype.respondUserCallback = function() {
 
   // If data confirmed, ready to be entered
   if (this.cmd.includes("CONFIRMED")) {
+    
+    this.user.addUserEntry(this.cmd);
+
     this.sendMessage("New activity added");
     return;
   }
@@ -227,7 +230,7 @@ TelegramBot.prototype.start = function() {
 
   if (this.user.verified) {
     let printedName = this.user.fullName.charAt(0) + this.user.fullName.substring(1).toLowerCase();
-    this.sendMessage("Hello " + printedName + "!\nWelcome to 38SCE HA tracking bot, here's what I can do for you\n");
+    this.sendMessage("Hello " + printedName + "!\nWelcome to [REDACTED], here's what I can do for you\n");
   }
   else{
     this.sendMessage('Unauthorized user, please run /authenticate and contact the ops spec to enroll');
@@ -272,28 +275,8 @@ TelegramBot.prototype.addActivity = function() {
 
     var keyboard = [
     [{
-      "text": "LIFE",
-      "callback_data": "LIFE"
-    }],
-    [{
-      "text": "TABATA",
-      "callback_data": "TABATA"
-    }],
-    [{
-      "text": "VOC",
-      "callback_data": "VOC"
-    }],
-    [{
-      "text": "DI",
-      "callback_data": "DI"
-    }],
-    [{
-      "text": "Others",
-      "callback_data": "OTHERS"
-    }],
-    [{
-      "text": "Cancel",
-      "callback_data": "CANCEL"
+      "text": "redacted",
+      "callback_data": "redacted"
     }]
   ];
 
@@ -307,8 +290,6 @@ TelegramBot.prototype.addActivity = function() {
   Allows user to select a date over the past 5 days
 */
 TelegramBot.prototype.selectEventDate = function(activityName) {
-
-  const weekdayList = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   
   // current date string
   let currentDate = new Date();
@@ -319,7 +300,7 @@ TelegramBot.prototype.selectEventDate = function(activityName) {
   // creates string array of dates 
   while (n < MAX_DAYS_ELAPSED) {
     // Create string to be printed
-    currentDateString = weekdayList[currentDate.getDay()] + " " 
+    currentDateString = WEEKDAYS[currentDate.getDay()] + " " 
                         + currentDate.getDate() + "/" 
                         + (currentDate.getMonth() + 1) + "/"
                         + (currentDate.getFullYear() + 1);
@@ -333,23 +314,23 @@ TelegramBot.prototype.selectEventDate = function(activityName) {
   var keyboard = [
     [{
       "text": dateArr[0] + " (Today)",
-      "callback_data": dateArr[0] + "," + activityName
+      "callback_data": dateArr[0] + " " + activityName
     }],
     [{
       "text": dateArr[1],
-      "callback_data": dateArr[1] + "," + activityName
+      "callback_data": dateArr[1] + " " + activityName
     }],
     [{
       "text": dateArr[2],
-      "callback_data": dateArr[2] + "," + activityName
+      "callback_data": dateArr[2] + " " + activityName
     }],
     [{
       "text": dateArr[3],
-      "callback_data": dateArr[3] + "," + activityName
+      "callback_data": dateArr[3] + " " + activityName
     }],
     [{
       "text": dateArr[4],
-      "callback_data": dateArr[4] + "," + activityName
+      "callback_data": dateArr[4] + " " + activityName
     }],
     [{
       "text": "Cancel",
@@ -399,12 +380,12 @@ TelegramBot.prototype.checkLessonStatus = function() {
 */
 TelegramBot.prototype.confirmEntry = function(newData) {
 
-  entryArr = newData.split(',');
+  entryArr = newData.split(' ');
 
   newDataHtml = 
     '<b>Name:</b> ' + this.user.fullName + 
-    '\n<b>Activity:</b> ' + entryArr[1] + 
-    '\n<b>Date:</b> ' + entryArr[0] + 
+    '\n<b>Activity:</b> ' + entryArr[2] + 
+    '\n<b>Date:</b> ' + entryArr[0] + " " + entryArr[1] +
     '\n\n<b>Current HA Status:</b> ' + this.user.haValidTill; 
 
   var keyboard = [
@@ -421,5 +402,7 @@ TelegramBot.prototype.confirmEntry = function(newData) {
   this.sendMessage(newDataHtml, 'HTML');
   this.sendMessageInlineKeyboard("Confirm Entry", keyboard); 
 }
+
+// FORMAT = "WEEKDAY DATE ACTIVITY"
 
 
