@@ -1,14 +1,14 @@
 // Telegram bot token
-const TELEBOT_TOKEN = '1594934478:AAF76vNdzFqEeuxzgJG99wW0mgbc5gZgBX8';
+const TELEBOT_TOKEN = '';
 
 // Telegram bot official api (Not Nodejs)
-const TELEBOT_API = "";
+const TELEBOT_API = 'https://api.telegram.org/bot';
 
 // Spreadsheet ID
-const SSID = "";
+const SSID = '';
 
 // Deployment URL
-const DEP_URL = "";
+const DEP_URL = '';
 
 
 
@@ -17,11 +17,14 @@ const DEP_URL = "";
 SPREADSHEET DATA POSITIONS
 
 */
-// maximum days elapsed from activity within which it can still be added
+// maximum days elapsed from activity within which it new activity added
 const MAX_DAYS_ELAPSED = 5;
 
 // offset of cells from the top
 const TOP_OFFSET_CELLS = 5;
+
+// offset of cells from the left
+const LEFT_OFFSET_CELLS = 4;
 
 // Nominal roll name column
 const NAME_COL_RANGE = "A5:A41";
@@ -43,4 +46,14 @@ VALID COMMANDS
 const VALID_COMMANDS =  ['/start', '/help', '/authenticate', '/addactivity', '/checkhastatus', '/addlesson', '/checklessonstaus'];
 
 // List of valid callback data, excusing otherwise it must be a new activity entry
-const VALID_CALLBACKS = ['LIFE', 'TABATA', 'VOC', 'DI', 'OTHERS'];
+const VALID_CALLBACKS = ['REDACTED'];
+
+
+
+/*
+UTILITIES
+
+*/
+const WEEKDAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+const MONTHS = [null, "January","February","March","April","May","June","July","August","September","October","November","December"];
