@@ -42,7 +42,7 @@ function validRequest_(e) {
     if (e.postData.type == 'application/json') {
       TelegramData = JSON.parse(e.postData.contents);
       return typeof TelegramData.message.text != 'undefined' 
-                 || TelegramData.callback_query.data != 'undefined';
+                 || TelegramData.callback_query != undefined;
     }
     else return false;
   }
@@ -58,27 +58,8 @@ function validRequest_(e) {
 */
 function doPost(e) {
   // check valid request
-  if (!validRequest_(e)) return;
+  // if (!validRequest_(e)) return;
 
-  let Bot = new TelegramBot(TelegramData);
-
-  if (TelegramData.callback_query){
-    Bot.user.chatId = TelegramData.callback_query.from.id;
-    Bot.sendMessage("this is a callback");
-  }
-  else if (TelegramData.message) {
-    Bot.respondUser();
-  }
-
+  var update = JSON.parse(e.postData.contents);
+  var bot = new TelegramBot(update); 
 }
-
-
-
-
-
-
-
-
-
-
-
