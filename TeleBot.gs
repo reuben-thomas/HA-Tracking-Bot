@@ -149,7 +149,20 @@ TelegramBot.prototype.respondUser = function() {
     return;
   }
 
-  // If valid command
+
+  // If unregistered user
+  if (this.user.verified == false) {
+    if (this.cmd == '/authenticate') {
+      this.authenticate();
+    }
+    else {
+      this.sendMessage('Unauthorized user, please run /authenticate and contact the ops spec to enroll');    
+    }
+    return;
+  }
+
+
+  // If valid command, registered user
   switch(this.cmd) {
     case '/start':
       this.start();
@@ -180,7 +193,6 @@ TelegramBot.prototype.respondUser = function() {
       break;
   }
 
-
 }
 
 
@@ -201,7 +213,7 @@ TelegramBot.prototype.respondUserCallback = function() {
   }
 
   // Valid activity callbacks
-  if (VALID_CALLBACKS.indexOf(this.cmd) > -1) {
+  if (VALID_ACTIVITIES.indexOf(this.cmd) > -1) {
     this.selectEventDate(this.cmd);
     return;
   }
@@ -227,16 +239,8 @@ TelegramBot.prototype.respondUserCallback = function() {
   Introduces user to bot function, determines if they are already on registered list
 */
 TelegramBot.prototype.start = function() {
-
-  if (this.user.verified) {
-    let printedName = this.user.fullName.charAt(0) + this.user.fullName.substring(1).toLowerCase();
-    this.sendMessage("Hello " + printedName + "!\nWelcome to [REDACTED], here's what I can do for you\n");
-  }
-  else{
-    this.sendMessage('Unauthorized user, please run /authenticate and contact the ops spec to enroll');
-    this.sendMessage('Functionality Resumes for Testing')  
-  }
-
+  let printedName = this.user.fullName.charAt(0) + this.user.fullName.substring(1).toLowerCase();
+  this.sendMessage("Hello " + printedName + "!\nWelcome to 38SCE HA tracking bot, here's what I can do for you\n");
   this.sendMessage(FUNCTION_LIST_HTML, 'HTML');
 }
 
@@ -259,7 +263,7 @@ TelegramBot.prototype.help = function() {
 TelegramBot.prototype.authenticate = function() {
   let text =
     'Your Private ID :\n<b>' + this.user.chatId + '</b>\n\n' +
-    'Your Public Name :\n<b>' + this.user.teleName + '</b>\n\n' +
+    'Your Registered Name :\n<b>' + this.user.fullName + '</b>\n\n' +
     '⚠ Note :\n<u><i>This ID may be synonymous with your phone number. To be shared with the ops spec only.</i></u>'
     ;
   this.sendMessage(text, 'HTML');
@@ -268,17 +272,47 @@ TelegramBot.prototype.authenticate = function() {
 
 /*
   ADDACTIVITY FUNCTION
-
   Allows user to select activity, then date and a confirmation
+
+  @param BUTTON_PADDING         A string of spaces to act as padding in the form
+  @param VALID_ACTIVITIES[]     An array of valid activities
 */
 TelegramBot.prototype.addActivity = function() {
 
-    var keyboard = [
-    [{
-      "text": "redacted",
-      "callback_data": "redacted"
-    }]
-  ];
+  let buttonArray = [];
+  let keyboard = [];
+  let n = BUTTON_PADDING;
+
+  // fill keyboard with side by side buttons so long as even
+  for (let i = 0; i < VALID_ACTIVITIES.length-1; i = i + 2) {
+    let tmpButton = 
+                    [{
+                        "text" : n+VALID_ACTIVITIES[i]+n, 
+                        "callback_data" : VALID_ACTIVITIES[i]
+                    },
+                    {
+                        "text" : n+VALID_ACTIVITIES[i+1]+n, 
+                        "callback_data" : VALID_ACTIVITIES[i+1]
+                    }];
+    keyboard.push(tmpButton);
+  }
+
+  // place last button "OTHERS" at bottom bar if odd number
+  if (VALID_ACTIVITIES.length%2 != 0) {
+    let lastIndex = VALID_ACTIVITIES.length - 1;
+    let tmpButton = [{
+                      "text" : n+VALID_ACTIVITIES[lastIndex]+n, 
+                      "callback_data" : VALID_ACTIVITIES[lastIndex]
+                    }];
+    keyboard.push(tmpButton);
+  }
+
+  // adds cancel button
+  let tmpButton = [{
+                    "text": n+"Cancel"+n,
+                    "callback_data": "CANCEL"
+                  }];
+  keyboard.push(tmpButton);
 
   this.sendMessageInlineKeyboard("Select activity", keyboard);
 }
@@ -295,48 +329,42 @@ TelegramBot.prototype.selectEventDate = function(activityName) {
   let currentDate = new Date();
   let currentDateString = "";
   let dateArr = [];
-  let n = 0;
+  var keyboard = [];
 
   // creates string array of dates 
-  while (n < MAX_DAYS_ELAPSED) {
+  for (let i = 0; i < MAX_DAYS_ELAPSED; i++) {
     // Create string to be printed
     currentDateString = WEEKDAYS[currentDate.getDay()] + " " 
                         + currentDate.getDate() + "/" 
                         + (currentDate.getMonth() + 1) + "/"
-                        + (currentDate.getFullYear() + 1);
+                        + (currentDate.getFullYear());
     // Add to list of dates
     dateArr.push(currentDateString.toString());
     // Count backward one day, increment once
     currentDate.setDate(currentDate.getDate() - 1);
-    n++;
   }
 
-  var keyboard = [
-    [{
-      "text": dateArr[0] + " (Today)",
-      "callback_data": dateArr[0] + " " + activityName
-    }],
-    [{
-      "text": dateArr[1],
-      "callback_data": dateArr[1] + " " + activityName
-    }],
-    [{
-      "text": dateArr[2],
-      "callback_data": dateArr[2] + " " + activityName
-    }],
-    [{
-      "text": dateArr[3],
-      "callback_data": dateArr[3] + " " + activityName
-    }],
-    [{
-      "text": dateArr[4],
-      "callback_data": dateArr[4] + " " + activityName
-    }],
-    [{
-      "text": "Cancel",
-      "callback_data": "CANCEL"
-    }]
-  ];
+  // creates string array of dates
+  // first date
+  let tmpButton = [{
+                    "text": dateArr[0] + " (Today)",
+                    "callback_data": dateArr[0] + " " + activityName
+                  }];
+  keyboard.push(tmpButton);
+  // all remaining dates
+  for (let i = 1; i < MAX_DAYS_ELAPSED; i++) {
+    tmpButton = [{
+                  "text": dateArr[i],
+                  "callback_data": dateArr[i] + " " + activityName
+                }];
+    keyboard.push(tmpButton);
+  }
+  // cancel button
+  tmpButton = [{
+                "text": "Cancel",
+                "callback_data": "CANCEL"
+              }];
+  keyboard.push(tmpButton);
 
   this.sendMessageInlineKeyboard('Select date for ' + activityName, keyboard);
 }
@@ -348,8 +376,12 @@ TelegramBot.prototype.selectEventDate = function(activityName) {
   Retrieves the user's present HA status and displays it to the user
 */
 TelegramBot.prototype.checkHaStatus = function() {
-  let text = "Your HA is valid until: " + this.user.haValidTill;
-  this.sendMessage(text);
+
+  newDataHtml = 
+  '<b>Current Status:</b> ' + this.user.haStatus + " [" + this.user.haValidity + "]" + 
+  '\n<b>Expiry:</b> ' + this.user.haExpiry;
+
+  this.sendMessage(newDataHtml, 'HTML');
 }
 
 
@@ -386,7 +418,8 @@ TelegramBot.prototype.confirmEntry = function(newData) {
     '<b>Name:</b> ' + this.user.fullName + 
     '\n<b>Activity:</b> ' + entryArr[2] + 
     '\n<b>Date:</b> ' + entryArr[0] + " " + entryArr[1] +
-    '\n\n<b>Current HA Status:</b> ' + this.user.haValidTill; 
+    '\n\n<b>Current HA Status:</b> ' + this.user.haStatus +
+    '\n<b>Expiry:</b> ' + this.user.haExpiry; 
 
   var keyboard = [
     [{
