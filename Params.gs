@@ -12,29 +12,22 @@ const DEP_URL = '';
 
 
 
-
 /*
-SPREADSHEET DATA POSITIONS
+FORM SETTINGS
 
 */
+// Button spacing to each side, in spaces
+const BUTTON_PADDING = "     ";
+
 // maximum days elapsed from activity within which it new activity added
-const MAX_DAYS_ELAPSED = 5;
+const MAX_DAYS_ELAPSED = 7;
 
-// offset of cells from the top
-const TOP_OFFSET_CELLS = 5;
+// After previous period's last day, how far away is expiry in subsequent period
+const HA_MAINTAINING_PERIOD = 14;
 
-// offset of cells from the left
-const LEFT_OFFSET_CELLS = 4;
-
-// Nominal roll name column
-const NAME_COL_RANGE = "A5:A41";
-
-// Column of telegram Id of each user
-const TELE_ID_COL_RANGE = "B5:B41";
-
-// HA valid column
-const HA_VALID_COL_RANGE = "C5:C41";
-
+// Number of activities required to clock y1 and y2
+const HA_GAINING_Y1_QUOTA = 10;
+const HA_GAINING_Y2_QUOTA = 7;
 
 
 
@@ -45,8 +38,45 @@ VALID COMMANDS
 // List of valid typed commands into bot
 const VALID_COMMANDS =  ['/start', '/help', '/authenticate', '/addactivity', '/checkhastatus', '/addlesson', '/checklessonstaus'];
 
-// List of valid callback data, excusing otherwise it must be a new activity entry
-const VALID_CALLBACKS = ['REDACTED'];
+// List of valid activities
+const VALID_ACTIVITIES = ['LIFE', 'VOC(1-3)', 'DI', 'FARTLEK', 'SAQ', 'BFM', 'STRENGTH', 'OTHERS'];
+
+
+
+/*
+SPREADSHEET DATA POSITIONS
+
+*/
+// offset of cells from the top
+const TOP_OFFSET_CELLS = 3;
+
+// offset of cells from the left
+const LEFT_OFFSET_CELLS = 7;
+
+// Nominal roll name column
+const NAME_COL = "A";
+
+// Column of telegram Id of each user
+const TELE_ID_COL_RANGE = "B4:B102";
+const TELE_ID_COL = "B";
+
+// year of service column
+const YEAR_COL = "C";
+
+// HA valid column
+const HA_VALID_COL = "D";
+
+// HA status column
+const HA_STATUS_COL = "E";
+
+// ha last until column
+const HA_START_COL = "F";
+
+// HA expiry date column
+const HA_EXPIRY_COL = "G"
+
+// recents column
+const RECENTS_COL = "H";
 
 
 
