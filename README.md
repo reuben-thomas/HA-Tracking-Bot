@@ -1,3 +1,3 @@
 #  [REDACTED] Tracking Telegram Bot
 
-This bot tracks [REDACTED] for the [REDACTED], for further information on functionality and practical use cases, [REDACTED]
+This definitely does something. Built as a quick prototype for my unit in the Singapore Armed Forces.
